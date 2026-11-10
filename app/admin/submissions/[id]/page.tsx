@@ -1,10 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { INTERP, OPEN_QUESTIONS } from "@/lib/questions";
-import { bandLabel, type Band } from "@/lib/scoring";
+import { bandLabel, reliabilityText, type Band } from "@/lib/scoring";
+import { levelAverage } from "@/lib/scoringV2";
 import { RELIABILITY_COLOR, type SubmissionDetail } from "@/lib/types";
 import MemoForm from "@/components/MemoForm";
 import DetailActions from "@/components/DetailActions";
+import ReportV2, { type LevelAverage } from "@/components/ReportV2";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +50,33 @@ export default async function SubmissionDetailPage({
   if (error || !data) notFound();
   const sub = data as SubmissionDetail;
   const relColor = RELIABILITY_COLOR[sub.reliability.level];
+
+  if (sub.version === "v2") {
+    // 학교급별 평균: 같은 학교급 v2 응답만 (v1과 섞지 않는다)
+    let avg: LevelAverage = null;
+    const { data: peers } = await supabase
+      .from("submissions")
+      .select("dimension_scores")
+      .eq("version", "v2")
+      .eq("school_level", sub.school_level);
+    if (peers) avg = levelAverage(peers);
+
+    return (
+      <>
+        <DetailActions id={sub.id} />
+        <div className="sheet report">
+          <div className="inner">
+            <ReportV2 sub={sub} dateText={dateFmt.format(new Date(sub.created_at))} avg={avg} />
+            <MemoForm id={sub.id} memo={sub.admin_memo} recommendation={sub.recommendation} />
+            <footer className="foot">
+              <span className="fw">Parah Mathematics</span>
+              <span>학습 성향 사전 진단 · 대외비</span>
+            </footer>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -118,15 +147,15 @@ export default async function SubmissionDetailPage({
             <div className="synth">
               <h3>요약 소견 — 상담 활용</h3>
               <div className="ln">
-                <b>두드러진 강점</b>　{sub.top_strengths.join(" · ")} — 수업에서 이 부분을
-                지렛대 삼으면 학생이 빠르게 몰입합니다.
+                <b>두드러진 강점</b>　{sub.top_strengths.join(" · ")} — 수업 설계의 출발점으로
+                삼을 수 있습니다.
               </div>
               <div className="ln">
                 <b>우선 보완점</b>　{sub.top_gaps.join(" · ")} — 초기 수업 설계에서 이 영역을
                 먼저 다루면 안정적입니다.
               </div>
               <div className="ln">
-                <b>응답 신뢰도</b>　<span style={{ color: relColor }}>{sub.reliability.text}</span>
+                <b>응답 신뢰도</b>　<span style={{ color: relColor }}>{reliabilityText(sub.reliability)}</span>
               </div>
               <div className="ln" style={{ marginTop: 11, color: "var(--ink-faint)", fontSize: 11.5 }}>
                 위 프로파일은 상담의 출발점입니다. 가져온 교재의 풀이식과 대화를 통해

@@ -13,6 +13,10 @@ export type DimensionScore = {
   idx: number; // 0~100
   cnt: number; // 응답한 문항 수
   band: Band;
+  // v2부터 기록 (v1 저장 데이터에는 없음)
+  total?: number; // 차원 전체 문항 수
+  na?: number; // "해당 없음" 수
+  insufficient?: boolean; // 응답이 절반 미만 → "응답 부족"
 };
 
 export type Reliability = {
@@ -46,6 +50,49 @@ function isValid(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5;
 }
 
+export const RELIABILITY_GOOD_TEXT = "응답이 고르게 이루어졌습니다. 내용의 정확성은 수업에서 확인합니다.";
+
+// 응답 신뢰도 점검 — 역채점 변환 후 같은 방향이어야 함. |a-b| >= 3 이면 불일치 1건.
+export function reliabilityOf(
+  keyVal: Record<string, number>,
+  pairs: [string, string][]
+): Reliability {
+  let pairsChecked = 0;
+  let conflicts = 0;
+  for (const [a, b] of pairs) {
+    if (keyVal[a] !== undefined && keyVal[b] !== undefined) {
+      pairsChecked++;
+      if (Math.abs(keyVal[a] - keyVal[b]) >= 3) conflicts++;
+    }
+  }
+
+  if (pairsChecked === 0) {
+    return { level: "none", conflicts, pairsChecked, text: "신뢰도 점검 문항 미응답" };
+  }
+  if (conflicts === 0) {
+    return { level: "good", conflicts, pairsChecked, text: RELIABILITY_GOOD_TEXT };
+  }
+  if (conflicts === 1) {
+    return {
+      level: "minor",
+      conflicts,
+      pairsChecked,
+      text: "경미한 응답 불일치 1건 — 대체로 신뢰할 수 있으나 참고 바랍니다.",
+    };
+  }
+  return {
+    level: "warn",
+    conflicts,
+    pairsChecked,
+    text: `응답 불일치 ${conflicts}건 — 문항을 반대로 이해했거나 성의 없이 답했을 수 있어, 결과 해석에 주의가 필요합니다.`,
+  };
+}
+
+// 결과지 표시용 문구. v1 응답에 저장된 옛 "양호" 문구도 새 문구로 보여 준다(판정은 그대로).
+export function reliabilityText(r: Reliability): string {
+  return r.level === "good" ? RELIABILITY_GOOD_TEXT : r.text;
+}
+
 export function score(answers: Answers): ScoreResult {
   let answered = 0;
   let total = 0;
@@ -72,41 +119,7 @@ export function score(answers: Answers): ScoreResult {
     scores.push({ name: d.name, en: d.en, idx, cnt, band: bandOf(idx) });
   });
 
-  // 응답 신뢰도 점검
-  let pairsChecked = 0;
-  let conflicts = 0;
-  for (const [a, b] of PAIRS) {
-    if (keyVal[a] !== undefined && keyVal[b] !== undefined) {
-      pairsChecked++;
-      if (Math.abs(keyVal[a] - keyVal[b]) >= 3) conflicts++;
-    }
-  }
-
-  let reliability: Reliability;
-  if (pairsChecked === 0) {
-    reliability = { level: "none", conflicts, pairsChecked, text: "신뢰도 점검 문항 미응답" };
-  } else if (conflicts === 0) {
-    reliability = {
-      level: "good",
-      conflicts,
-      pairsChecked,
-      text: "응답 일관성 양호 — 결과를 신뢰할 수 있습니다.",
-    };
-  } else if (conflicts === 1) {
-    reliability = {
-      level: "minor",
-      conflicts,
-      pairsChecked,
-      text: "경미한 응답 불일치 1건 — 대체로 신뢰할 수 있으나 참고 바랍니다.",
-    };
-  } else {
-    reliability = {
-      level: "warn",
-      conflicts,
-      pairsChecked,
-      text: `응답 불일치 ${conflicts}건 — 문항을 반대로 이해했거나 성의 없이 답했을 수 있어, 결과 해석에 주의가 필요합니다.`,
-    };
-  }
+  const reliability = reliabilityOf(keyVal, PAIRS);
 
   // 요약: index 내림차순 → 상위 2 강점, 하위 2 보완
   const sorted = [...scores].sort((a, b) => b.idx - a.idx);

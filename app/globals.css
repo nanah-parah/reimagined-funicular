@@ -71,7 +71,9 @@ body{
 .dim{ margin-top:26px; break-inside:avoid; }
 .dim-head{ display:flex; align-items:baseline; gap:13px; margin-bottom:8px; }
 .dim-num{ font-family:"Cormorant Garamond", serif; font-style:italic; font-size:24px;
-  color:var(--brass); width:30px; flex:0 0 auto; line-height:1; }
+  color:var(--brass); width:30px; flex:0 0 auto; line-height:1;
+  /* VIII·XIII·XIV처럼 30px보다 긴 번호가 "VII / I"로 끊기지 않게 한 줄로 둔다 */
+  white-space:nowrap; overflow-wrap:normal; word-break:keep-all; }
 .dim-title{ font-size:15px; font-weight:600; letter-spacing:.03em; flex:0 0 auto; }
 .dim-en{ font-family:"Cormorant Garamond", serif; font-style:italic; font-size:12.5px; color:var(--ink-faint); }
 .dim-line{ flex:1; border-top:1px solid var(--rule-soft); align-self:center; margin-left:4px; }
@@ -426,3 +428,66 @@ body{
   .sq-other{ max-width:none; }
   .sq-err{ box-shadow:-10px 0 0 #FCF7F5, 10px 0 0 #FCF7F5; }
 }
+
+/* ================= v2 사전 진단 ================= */
+
+/* "아직 해당 없음"이 붙은 문항: 선택지 6칸 */
+.q.has-na{ grid-template-columns:1fr 348px; }
+.q.has-na .opts label{ width:52px; }
+.opts .na-opt{ border-left:1px solid var(--rule-soft); }
+@media (max-width:620px){
+  .q.has-na{ grid-template-columns:1fr; }
+  .q.has-na .opts{ max-width:340px; }
+  .q.has-na .opts label{ width:48px; }
+}
+
+/* 보호자 확인 (초4~중2) */
+.consent .guardian{ margin-top:16px; padding-top:14px; border-top:1px solid var(--rule-soft); }
+.consent .guardian .field{ max-width:240px; }
+
+/* 자유 서술 두 칸 + "없다" 체크 */
+.open .of{ margin-top:6px; }
+.open .ol-sub{ font-size:12px; color:var(--ink-soft); margin:8px 0 4px; }
+.open textarea:disabled{ opacity:.45; }
+.open .none-opt{ margin-top:4px; font-size:12.5px; }
+.sq-section .sq:first-of-type{ padding-top:8px; }
+
+/* ---- 결과지 v2 ---- */
+.bar-cnt{ font-size:10.5px; color:var(--ink-faint); letter-spacing:.02em; margin-left:8px; font-weight:400; }
+.track .avg{ position:absolute; top:0; bottom:0; width:1.5px; background:var(--ink); opacity:.75; }
+.avg-legend{ margin-top:8px; font-size:11px; color:var(--ink-faint); }
+.avg-legend i{ display:inline-block; width:1.5px; height:10px; background:var(--ink); opacity:.75;
+  vertical-align:-1px; margin-right:6px; }
+.subgroups{ margin-top:5px; font-size:11.5px; color:var(--ink-soft); }
+.subgroups span{ margin-right:14px; }
+.subgroups b{ font-weight:600; color:var(--ink); font-family:"Cormorant Garamond", serif; font-size:13px; }
+
+.aux{ margin-top:34px; break-inside:avoid; }
+.aux-mod{ margin-top:18px; break-inside:avoid; }
+.aux-title{ font-size:13px; font-weight:600; }
+.aux-title .no{ font-family:"Cormorant Garamond", serif; font-style:italic; color:var(--brass); margin-right:8px; font-size:15px; font-weight:400; }
+.aux-title .en{ margin-left:7px; font-family:"Cormorant Garamond", serif; font-style:italic; font-size:11.5px; color:var(--ink-faint); font-weight:400; }
+.aux-note{ margin:3px 0 8px; font-size:11.5px; color:var(--ink-faint); line-height:1.6; }
+.cell-row{ display:grid; grid-template-columns:72px 1fr 64px; align-items:center; gap:10px; padding:2px 0; }
+.cell-k{ font-size:12px; color:var(--ink-soft); }
+.cell-row .track{ height:6px; }
+.cell-row .fill{ background:var(--brass); }
+.cell-v{ text-align:right; font-family:"Cormorant Garamond", serif; font-size:14px; color:var(--ink); white-space:nowrap; }
+.cell-v small{ font-family:"Noto Serif KR", serif; font-size:10px; color:var(--ink-faint); margin-left:4px; }
+
+.kv{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:4px 18px; margin-top:4px; }
+.kv .k{ font-size:12px; color:var(--ink-faint); line-height:1.6; }
+.kv .v{ font-size:12.5px; color:var(--ink); line-height:1.6; }
+.kv .v.muted{ color:var(--ink-faint); }
+
+.item-table-sec{ break-before:page; margin-top:34px; }
+.it-table{ width:100%; border-collapse:collapse; font-size:11.5px; margin-top:10px; }
+.it-table th{ text-align:left; font-size:10px; letter-spacing:.12em; color:var(--brass-deep); font-weight:600;
+  border-bottom:1px solid var(--rule); padding:6px 6px; white-space:nowrap; }
+.it-table td{ border-bottom:1px solid var(--rule-soft); padding:5px 6px; color:var(--ink-soft); vertical-align:top; line-height:1.5; }
+.it-table td.ans{ text-align:center; color:var(--ink); white-space:nowrap; font-family:"Cormorant Garamond", serif; font-size:13px; }
+.it-table td.ans.muted{ color:var(--ink-faint); font-family:"Noto Serif KR", serif; font-size:10.5px; }
+.it-table td.sec{ white-space:nowrap; color:var(--ink-faint); }
+.it-table td.rev{ white-space:nowrap; }
+.it-table tr{ break-inside:avoid; }
+@media (max-width:620px){ .kv{ grid-template-columns:1fr; } .cell-row{ grid-template-columns:60px 1fr 56px; } }

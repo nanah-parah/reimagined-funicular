@@ -1,4 +1,6 @@
 import type { DimensionScore, Reliability, ReliabilityLevel } from "./scoring";
+import type { AuxScores } from "./scoringV2";
+import type { AnswersV2, OpenAnswersV2, SchoolLevel } from "./questionsV2";
 
 // 대시보드 목록용 (요약 컬럼만)
 export type SubmissionRow = {
@@ -14,14 +16,31 @@ export type SubmissionRow = {
   total: number;
 };
 
-// 상세 화면용 (전체 컬럼)
-export type SubmissionDetail = SubmissionRow & {
-  answers: Record<string, number>;
+// 상세 화면용 (전체 컬럼). version 칸이 없던 행(마이그레이션 전)은 v1로 읽는다.
+type DetailCommon = SubmissionRow & {
   dimension_scores: DimensionScore[];
-  open_answers: string[];
   admin_memo: string;
   recommendation: string;
 };
+
+export type SubmissionDetailV1 = DetailCommon & {
+  version?: "v1" | null;
+  answers: Record<string, number>;
+  open_answers: string[];
+};
+
+export type SubmissionDetailV2 = DetailCommon & {
+  version: "v2";
+  school_level: SchoolLevel;
+  guardian_name: string | null;
+  guardian_confirmed: boolean | null;
+  answers: AnswersV2;
+  aux_scores: AuxScores;
+  situation: Record<string, string>;
+  open_answers: OpenAnswersV2;
+};
+
+export type SubmissionDetail = SubmissionDetailV1 | SubmissionDetailV2;
 
 export const RELIABILITY_LABEL: Record<ReliabilityLevel, string> = {
   good: "양호",
